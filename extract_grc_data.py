@@ -77,5 +77,29 @@ def extract_from_excel_or_csv(file):
     weight_col = st.selectbox(
         "Column for Weight (optional)",
         ["None"] + df.columns.tolist(),
+        index=(df.columns.get_loc(mapping['Weight']) + 1) if mapping.get('Weight') and mapping['Weight'] in df.columns else 0
+    )
+
+    selected_cols = [type_col, count_col, height_col, width_col, depth_col]
+    new_names = ['Type', 'Count', 'Height', 'Width', 'Depth']
+    if weight_col != "None":
+        selected_cols.append(weight_col)
+        new_names.append('Weight')
+
+    try:
+        extracted = df[selected_cols]
+        extracted.columns = new_names
+        extracted = extracted.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        extracted.replace("", pd.NA, inplace=True)
+        extracted = extracted.dropna(how='any')
+
+        header_keywords = ['type', 'tips', 'count', 'qty', 'skaits', 'height', 'augstums', 'width', 'platums', 'garums', 'depth', 'dziļums', 'weight', 'svars']
+        extracted = extracted[~extracted.apply(lambda row: sum(any(str(val).lower() == kw for kw in header_keywords) for val in row) >= 3, axis=1)]
+
+        return extracted
+    except Exception as e:
+        st.error(f"Failed to extract data using selected columns. Error: {e}")
+        return pd.DataFrame()",
+        ["None"] + df.columns.tolist(),
         index=(df.columns.get_loc(mapping['Weight']) + 1) if mapping.get('Weight') in df.columns else 0
     )
