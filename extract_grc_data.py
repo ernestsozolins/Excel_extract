@@ -74,71 +74,8 @@ def extract_from_excel_or_csv(file):
     height_col = st.selectbox("Column for Height", df.columns, index=df.columns.get_loc(mapping['Height']) if mapping.get('Height') in df.columns else 0)
     width_col = st.selectbox("Column for Width", df.columns, index=df.columns.get_loc(mapping['Width']) if mapping.get('Width') in df.columns else 0)
     depth_col = st.selectbox("Column for Depth", df.columns, index=df.columns.get_loc(mapping['Depth']) if mapping.get('Depth') in df.columns else 0)
-    weight_col = st.selectbox("Column for Weight (optional)", ["None"] + df.columns.tolist(), index=(df.columns.get_loc(mapping['Weight']) + 1) if mapping.get('Weight') in df.columns else 0), index=df.columns.get_loc(mapping['Weight']) + 1 if mapping['Weight'] and mapping['Weight'] in df.columns else 0)
-
-    selected_cols = [type_col, count_col, height_col, width_col, depth_col]
-    new_names = ['Type', 'Count', 'Height', 'Width', 'Depth']
-    if weight_col != "None":
-        selected_cols.append(weight_col)
-        new_names.append('Weight')
-
-    try:
-        extracted = df[selected_cols]
-        extracted.columns = new_names
-
-        # Clean whitespace from selected columns
-        extracted = extracted.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-
-        # Drop fully or partially empty rows and remove rows that are actually headers
-        extracted.replace("", pd.NA, inplace=True)
-        extracted = extracted.dropna(how='any')
-
-        # Drop rows that contain column-like labels (to avoid re-parsed headers)
-        header_keywords = ['type', 'tips', 'count', 'qty', 'skaits', 'height', 'augstums', 'width', 'platums', 'garums', 'depth', 'dziļums', 'weight', 'svars']
-        extracted = extracted[~extracted.apply(lambda row: sum(any(str(val).lower() == kw for kw in header_keywords) for val in row) >= 3, axis=1)]
-
-        # Validate numeric columns (warnings removed)
-        for col in ['Count', 'Height', 'Width', 'Depth']:
-            _ = pd.api.types.is_numeric_dtype(extracted[col])
-
-        return extracted
-    except Exception as e:
-        st.error(f"Failed to extract data using smart column mapping. Error: {e}")
-        return pd.DataFrame()
-
-if uploaded_file:
-    file_type = uploaded_file.name.split('.')[-1].lower()
-    if file_type == 'pdf':
-        df = extract_from_pdf(uploaded_file)
-    else:
-        df = extract_from_excel_or_csv(uploaded_file)
-
-    if not df.empty:
-        st.success("Data extracted successfully!")
-
-        st.subheader("Row Removal and Update Option")
-        delete_rows = st.multiselect("Select row indices to delete from extracted data", df.index.tolist())
-        amend_data = st.checkbox("Amend extracted data after row deletion", value=False)
-        if amend_data and delete_rows:
-            df = df.drop(delete_rows).reset_index(drop=True)
-            st.info("Selected rows have been removed and data updated.")
-
-        # Show full extracted data
-        st.subheader("Extracted GRC Panel Data")
-        st.dataframe(df)
-
-        # Show total count
-        if 'Count' in df.columns:
-            total = df['Count'].sum()
-            st.markdown(f"**Total Panel Count:** {total}")
-
-        # Allow CSV download
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="Download Extracted Data as CSV",
-            data=csv,
-            file_name='extracted_grc_panels.csv',
-            mime='text/csv'
-        )
-    else:
-        st.warning("No data extracted or incorrect file format.")
+    weight_col = st.selectbox(
+        "Column for Weight (optional)",
+        ["None"] + df.columns.tolist(),
+        index=(df.columns.get_loc(mapping['Weight']) + 1) if mapping.get('Weight') in df.columns else 0
+    )
