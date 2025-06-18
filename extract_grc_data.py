@@ -53,6 +53,7 @@ def smart_column_mapping(df, row_index=7):
     return mapping
 
 def extract_from_excel_or_csv(file):
+    # Extracts and renames columns based on the selected header row
     # Reverted: Load entire file from top
     try:
         df = pd.read_excel(file)
@@ -61,14 +62,21 @@ def extract_from_excel_or_csv(file):
 
     # Clean whitespace from all cells
     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-    df.columns = [str(c).strip() for c in df.columns]
 
-    st.subheader("Preview of Uploaded Data")
-    st.dataframe(df, height=500)
-
-    header_row_index = st.number_input("Row number to auto-detect column names from (1-based)", min_value=1, max_value=len(df), value=8) - 1
-    mapping = smart_column_mapping(df, row_index=header_row_index)
+    # Auto-detect header row
+    mapping = smart_column_mapping(df, row_index=0)  # Row already used as header
     st.subheader("Adjust Column Mapping (optional)")
+    use_defaults = st.checkbox("Use default column mapping (ignore smart detection)", value=False)
+
+    if use_defaults:
+        mapping = {
+            'Type': df.columns[0] if len(df.columns) > 0 else None,
+            'Count': df.columns[1] if len(df.columns) > 1 else None,
+            'Weight': df.columns[2] if len(df.columns) > 2 else None,
+            'Height': df.columns[3] if len(df.columns) > 3 else None,
+            'Width': df.columns[4] if len(df.columns) > 4 else None,
+            'Depth': df.columns[5] if len(df.columns) > 5 else None
+        }
     type_col = st.selectbox("Column for Type", df.columns, index=df.columns.get_loc(mapping['Type']) if mapping.get('Type') in df.columns else 0)
     count_col = st.selectbox("Column for Count", df.columns, index=df.columns.get_loc(mapping['Count']) if mapping.get('Count') in df.columns else 0)
     height_col = st.selectbox("Column for Height", df.columns, index=df.columns.get_loc(mapping['Height']) if mapping.get('Height') in df.columns else 0)
