@@ -99,7 +99,4 @@ def extract_from_excel_or_csv(file):
         return extracted
     except Exception as e:
         st.error(f"Failed to extract data using selected columns. Error: {e}")
-        return pd.DataFrame()",
-        ["None"] + df.columns.tolist(),
-        index=(df.columns.get_loc(mapping['Weight']) + 1) if mapping.get('Weight') in df.columns else 0
-    )
+        return pd.DataFrame()
