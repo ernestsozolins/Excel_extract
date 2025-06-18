@@ -55,13 +55,14 @@ def extract_from_excel_or_csv(file):
         # Clean whitespace from selected columns
         extracted = extracted.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
+        # Drop fully or partially empty rows
+        extracted.replace("", pd.NA, inplace=True)
+        extracted = extracted.dropna(how='any')
+
         # Validate numeric columns
         for col in ['Count', 'Height', 'Width', 'Depth']:
             if not pd.api.types.is_numeric_dtype(extracted[col]):
                 st.warning(f"Column '{col}' contains non-numeric values. Please check your mapping.")
-
-        # Drop rows where any of the fields are missing
-        extracted = extracted.dropna(how='any')
 
         return extracted
     except:
