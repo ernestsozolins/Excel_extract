@@ -22,7 +22,8 @@ def extract_from_pdf(file):
                     "Count": int(count),
                     "Height": int(height),
                     "Width": int(width),
-                    "Depth": int(depth)
+                    "Depth": int(depth),
+                    "Weight": None  # Optional column
                 })
     return pd.DataFrame(data)
 
@@ -39,7 +40,7 @@ def extract_from_excel_or_csv(file):
     st.write("Detected columns:", df.columns.tolist())
 
     st.subheader("Preview of Uploaded Data")
-    st.dataframe(df.head())
+    st.dataframe(df.head(10))
 
     st.subheader("Map Columns to Fields")
     type_col = st.selectbox("Select column for Type", df.columns)
@@ -47,10 +48,18 @@ def extract_from_excel_or_csv(file):
     height_col = st.selectbox("Select column for Height", df.columns)
     width_col = st.selectbox("Select column for Width", df.columns)
     depth_col = st.selectbox("Select column for Depth", df.columns)
+    weight_col = st.selectbox("Select column for Weight (optional)", ["None"] + df.columns.tolist())
 
     try:
-        extracted = df[[type_col, count_col, height_col, width_col, depth_col]]
-        extracted.columns = ['Type', 'Count', 'Height', 'Width', 'Depth']
+        selected_cols = [type_col, count_col, height_col, width_col, depth_col]
+        new_names = ['Type', 'Count', 'Height', 'Width', 'Depth']
+
+        if weight_col != "None":
+            selected_cols.append(weight_col)
+            new_names.append('Weight')
+
+        extracted = df[selected_cols]
+        extracted.columns = new_names
 
         # Clean whitespace from selected columns
         extracted = extracted.applymap(lambda x: x.strip() if isinstance(x, str) else x)
