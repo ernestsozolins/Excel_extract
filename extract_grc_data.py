@@ -14,7 +14,6 @@ def extract_from_pdf(file):
             text = page.extract_text()
             if not text:
                 continue
-            # Regex to find lines like: Grc.L 1 175 3235 525
             matches = re.findall(r'(Grc\.[\w\.]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)', text)
             for match in matches:
                 unit_type, count, height, width, depth = match
@@ -32,29 +31,32 @@ def extract_from_excel_or_csv(file):
         df = pd.read_excel(file)
     except:
         df = pd.read_csv(file)
-    # Try to standardize column names
-    df.columns = [str(c).strip().lower() for c in df.columns]
-    # Attempt to map columns
-    col_map = {}
-    for col in df.columns:
-        if 'type' in col or 'tips' in col:
-            col_map['Type'] = col
-        elif 'count' in col or 'skaits' in col:
-            col_map['Count'] = col
-        elif 'height' in col or 'augstums' in col:
-            col_map['Height'] = col
-        elif 'width' in col or 'platums' in col or 'garums' in col:
-            col_map['Width'] = col
-        elif 'depth' in col or 'dzi\u013cums' in col:
-            col_map['Depth'] = col
 
-    if len(col_map) < 5:
-        st.error("Could not detect all necessary columns.")
+    df.columns = [str(c).strip() for c in df.columns]
+    st.write("Detected columns:", df.columns.tolist())
+
+    st.subheader("Preview of Uploaded Data")
+    st.dataframe(df.head())
+
+    st.subheader("Map Columns to Fields")
+    type_col = st.selectbox("Select column for Type", df.columns)
+    count_col = st.selectbox("Select column for Count", df.columns)
+    height_col = st.selectbox("Select column for Height", df.columns)
+    width_col = st.selectbox("Select column for Width", df.columns)
+    depth_col = st.selectbox("Select column for Depth", df.columns)
+
+    try:
+        extracted = df[[type_col, count_col, height_col, width_col, depth_col]]
+        extracted.columns = ['Type', 'Count', 'Height', 'Width', 'Depth']
+
+        # Validate numeric columns
+        for col in ['Count', 'Height', 'Width', 'Depth']:
+            if not pd.api.types.is_numeric_dtype(extracted[col]):
+                st.warning(f"Column '{col}' contains non-numeric values. Please check your mapping.")
+        return extracted.dropna()
+    except:
+        st.error("Failed to extract data using selected columns.")
         return pd.DataFrame()
-
-    extracted = df[[col_map[k] for k in ['Type', 'Count', 'Height', 'Width', 'Depth']]]
-    extracted.columns = ['Type', 'Count', 'Height', 'Width', 'Depth']
-    return extracted.dropna()
 
 if uploaded_file:
     file_type = uploaded_file.name.split('.')[-1].lower()
