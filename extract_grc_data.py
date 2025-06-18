@@ -27,15 +27,29 @@ def extract_from_pdf(file):
                 })
     return pd.DataFrame(data)
 
-def smart_column_mapping(df):
+def smart_column_mapping(df, row_index=7):
+    # Updated to include fallback if detection fails
     mapping = {}
-    lower_cols = {col.lower(): col for col in df.columns}
-    mapping['Type'] = next((lower_cols[c] for c in lower_cols if 'type' in c or 'tips' in c), None)
-    mapping['Count'] = next((lower_cols[c] for c in lower_cols if 'count' in c or 'skaits' in c), None)
-    mapping['Height'] = next((lower_cols[c] for c in lower_cols if 'height' in c or 'augstums' in c), None)
-    mapping['Width'] = next((lower_cols[c] for c in lower_cols if 'width' in c or 'platums' in c or 'garums' in c), None)
-    mapping['Depth'] = next((lower_cols[c] for c in lower_cols if 'depth' in c or 'dziļums' in c), None)
-    mapping['Weight'] = next((lower_cols[c] for c in lower_cols if 'weight' in c or 'svars' in c), None)
+    st.markdown(f"Using row {row_index + 1} for auto-detection of column headers")
+    if len(df) > row_index:
+        header_row = df.iloc[row_index].astype(str).str.lower()
+        for i, val in enumerate(header_row):
+            if 'type' in val or 'tips' in val:
+                mapping['Type'] = df.columns[i]
+            elif 'count' in val or 'qty' in val or 'skaits' in val:
+                mapping['Count'] = df.columns[i]
+            elif 'height' in val or 'augstums' in val:
+                mapping['Height'] = df.columns[i]
+            elif 'width' in val or 'platums' in val or 'garums' in val:
+                mapping['Width'] = df.columns[i]
+            elif 'depth' in val or 'dziļums' in val:
+                mapping['Depth'] = df.columns[i]
+            elif 'weight' in val or 'svars' in val:
+                mapping['Weight'] = df.columns[i]
+    else:
+        st.info("Could not detect headers in the selected row. Falling back to default column positions.")
+        for field, index in [('Type', 0), ('Count', 1), ('Height', 4), ('Width', 5), ('Depth', 6), ('Weight', 2)]:
+            mapping[field] = df.columns[index] if len(df.columns) > index else None
     return mapping
 
 def extract_from_excel_or_csv(file):
@@ -52,7 +66,8 @@ def extract_from_excel_or_csv(file):
     st.subheader("Preview of Uploaded Data")
     st.dataframe(df, height=500)
 
-    mapping = smart_column_mapping(df)
+    header_row_index = st.number_input("Row number to auto-detect column names from (1-based)", min_value=1, max_value=len(df), value=8) - 1
+    mapping = smart_column_mapping(df, row_index=header_row_index)
     st.subheader("Adjust Column Mapping (optional)")
     type_col = st.selectbox("Column for Type", df.columns, index=df.columns.get_loc(mapping['Type']) if mapping['Type'] and mapping['Type'] in df.columns else 0)
     count_col = st.selectbox("Column for Count", df.columns, index=df.columns.get_loc(mapping['Count']) if mapping['Count'] and mapping['Count'] in df.columns else 0)
@@ -82,10 +97,9 @@ def extract_from_excel_or_csv(file):
         header_keywords = ['type', 'tips', 'count', 'qty', 'skaits', 'height', 'augstums', 'width', 'platums', 'garums', 'depth', 'dziļums', 'weight', 'svars']
         extracted = extracted[~extracted.apply(lambda row: sum(any(str(val).lower() == kw for kw in header_keywords) for val in row) >= 3, axis=1)]
 
-        # Validate numeric columns
+        # Validate numeric columns (warnings removed)
         for col in ['Count', 'Height', 'Width', 'Depth']:
-            if not pd.api.types.is_numeric_dtype(extracted[col]):
-                st.warning(f"Column '{col}' contains non-numeric values. Please check your data.")
+            _ = pd.api.types.is_numeric_dtype(extracted[col])
 
         return extracted
     except Exception as e:
