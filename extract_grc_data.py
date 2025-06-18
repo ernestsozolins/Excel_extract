@@ -39,11 +39,11 @@ def smart_column_mapping(df):
     return mapping
 
 def extract_from_excel_or_csv(file):
-    START_ROW = 8  # Data starts at Excel row 9 (0-indexed as 8)  # Skip metadata and header rows, assuming data starts from Excel row 8 (index 7)
+    # Reverted: Load entire file from top
     try:
-        df = pd.read_excel(file, skiprows=START_ROW)
+        df = pd.read_excel(file)
     except:
-        df = pd.read_csv(file, skiprows=START_ROW)
+        df = pd.read_csv(file)
 
     # Clean whitespace from all cells
     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
@@ -78,8 +78,9 @@ def extract_from_excel_or_csv(file):
         extracted.replace("", pd.NA, inplace=True)
         extracted = extracted.dropna(how='any')
 
-        # Drop rows that contain column-like labels
-        extracted = extracted[~extracted.apply(lambda row: all(isinstance(val, str) and any(label.lower() in val.lower() for label in ['type', 'qty', 'height', 'width', 'depth', 'weight']) for val in row), axis=1)]
+        # Drop rows that contain column-like labels (to avoid re-parsed headers)
+        header_keywords = ['type', 'tips', 'count', 'qty', 'skaits', 'height', 'augstums', 'width', 'platums', 'garums', 'depth', 'dziļums', 'weight', 'svars']
+        extracted = extracted[~extracted.apply(lambda row: sum(any(str(val).lower() == kw for kw in header_keywords) for val in row) >= 3, axis=1)]
 
         # Validate numeric columns
         for col in ['Count', 'Height', 'Width', 'Depth']:
