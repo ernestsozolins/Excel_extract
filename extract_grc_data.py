@@ -32,6 +32,9 @@ def extract_from_excel_or_csv(file):
     except:
         df = pd.read_csv(file)
 
+    # Clean whitespace from all cells
+    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+
     df.columns = [str(c).strip() for c in df.columns]
     st.write("Detected columns:", df.columns.tolist())
 
@@ -49,12 +52,15 @@ def extract_from_excel_or_csv(file):
         extracted = df[[type_col, count_col, height_col, width_col, depth_col]]
         extracted.columns = ['Type', 'Count', 'Height', 'Width', 'Depth']
 
+        # Clean whitespace from selected columns
+        extracted = extracted.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+
         # Validate numeric columns
         for col in ['Count', 'Height', 'Width', 'Depth']:
             if not pd.api.types.is_numeric_dtype(extracted[col]):
                 st.warning(f"Column '{col}' contains non-numeric values. Please check your mapping.")
 
-        # Drop rows where all fields are empty or any of the fields are missing
+        # Drop rows where any of the fields are missing
         extracted = extracted.dropna(how='any')
 
         return extracted
