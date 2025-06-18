@@ -27,30 +27,6 @@ def extract_from_pdf(file):
                 })
     return pd.DataFrame(data)
 
-def smart_column_mapping(df, row_index=7):
-    # Updated to include fallback if detection fails
-    mapping = {}
-    st.markdown(f"Using row {row_index + 1} for auto-detection of column headers")
-    if len(df) > row_index:
-        header_row = df.iloc[row_index].astype(str).str.lower()
-        for i, val in enumerate(header_row):
-            if 'type' in val or 'tips' in val:
-                mapping['Type'] = df.columns[i]
-            elif 'count' in val or 'qty' in val or 'skaits' in val:
-                mapping['Count'] = df.columns[i]
-            elif 'height' in val or 'augstums' in val:
-                mapping['Height'] = df.columns[i]
-            elif 'width' in val or 'platums' in val or 'garums' in val:
-                mapping['Width'] = df.columns[i]
-            elif 'depth' in val or 'dziļums' in val:
-                mapping['Depth'] = df.columns[i]
-            elif 'weight' in val or 'svars' in val:
-                mapping['Weight'] = df.columns[i]
-    else:
-        st.info("Could not detect headers in the selected row. Falling back to default column positions.")
-        for field, index in [('Type', 0), ('Count', 1), ('Height', 4), ('Width', 5), ('Depth', 6), ('Weight', 2)]:
-            mapping[field] = df.columns[index] if len(df.columns) > index else None
-    return mapping
 
 def extract_from_excel_or_csv(file):
     # Extracts and renames columns based on the selected header row
@@ -63,13 +39,16 @@ def extract_from_excel_or_csv(file):
     # Clean whitespace from all cells
     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
-    # Auto-detect header row
-    header_row_index = st.number_input("Row number to auto-detect column names from (1-based)", min_value=1, max_value=len(df), value=8) - 1
-    st.markdown(f"Using row {header_row_index + 1} for auto-detection of column headers")
-    df.columns = df.iloc[header_row_index].astype(str)
-    df = df.drop(index=header_row_index).reset_index(drop=True)
+    
 
-    mapping = smart_column_mapping(df, row_index=0)
+    mapping = {
+        'Type': df.columns[0] if len(df.columns) > 0 else None,
+        'Count': df.columns[1] if len(df.columns) > 1 else None,
+        'Weight': df.columns[2] if len(df.columns) > 2 else None,
+        'Height': df.columns[3] if len(df.columns) > 3 else None,
+        'Width': df.columns[4] if len(df.columns) > 4 else None,
+        'Depth': df.columns[5] if len(df.columns) > 5 else None
+    }
     st.subheader("Adjust Column Mapping (optional)")
     use_defaults = st.checkbox("Use default column mapping (ignore smart detection)", value=False)
 
