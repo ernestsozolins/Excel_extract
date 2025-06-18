@@ -53,12 +53,12 @@ def extract_from_excel_or_csv(file):
 
     mapping = smart_column_mapping(df)
     st.subheader("Adjust Column Mapping (optional)")
-    type_col = st.selectbox("Column for Type", df.columns, index=df.columns.get_loc(mapping['Type']) if mapping['Type'] in df.columns else 0)
-    count_col = st.selectbox("Column for Count", df.columns, index=df.columns.get_loc(mapping['Count']) if mapping['Count'] in df.columns else 0)
-    height_col = st.selectbox("Column for Height", df.columns, index=df.columns.get_loc(mapping['Height']) if mapping['Height'] in df.columns else 0)
-    width_col = st.selectbox("Column for Width", df.columns, index=df.columns.get_loc(mapping['Width']) if mapping['Width'] in df.columns else 0)
-    depth_col = st.selectbox("Column for Depth", df.columns, index=df.columns.get_loc(mapping['Depth']) if mapping['Depth'] in df.columns else 0)
-    weight_col = st.selectbox("Column for Weight (optional)", ["None"] + df.columns.tolist(), index=df.columns.get_loc(mapping['Weight']) + 1 if mapping['Weight'] in df.columns else 0)
+    type_col = st.selectbox("Column for Type", df.columns, index=df.columns.get_loc(mapping['Type']) if mapping['Type'] and mapping['Type'] in df.columns else 0)
+    count_col = st.selectbox("Column for Count", df.columns, index=df.columns.get_loc(mapping['Count']) if mapping['Count'] and mapping['Count'] in df.columns else 0)
+    height_col = st.selectbox("Column for Height", df.columns, index=df.columns.get_loc(mapping['Height']) if mapping['Height'] and mapping['Height'] in df.columns else 0)
+    width_col = st.selectbox("Column for Width", df.columns, index=df.columns.get_loc(mapping['Width']) if mapping['Width'] and mapping['Width'] in df.columns else 0)
+    depth_col = st.selectbox("Column for Depth", df.columns, index=df.columns.get_loc(mapping['Depth']) if mapping['Depth'] and mapping['Depth'] in df.columns else 0)
+    weight_col = st.selectbox("Column for Weight (optional)", ["None"] + df.columns.tolist(), index=df.columns.get_loc(mapping['Weight']) + 1 if mapping['Weight'] and mapping['Weight'] in df.columns else 0)
 
     selected_cols = [type_col, count_col, height_col, width_col, depth_col]
     new_names = ['Type', 'Count', 'Height', 'Width', 'Depth']
@@ -73,9 +73,12 @@ def extract_from_excel_or_csv(file):
         # Clean whitespace from selected columns
         extracted = extracted.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
-        # Drop fully or partially empty rows
+        # Drop fully or partially empty rows and remove rows that are actually headers
         extracted.replace("", pd.NA, inplace=True)
         extracted = extracted.dropna(how='any')
+
+        # Drop rows that contain column-like labels
+        extracted = extracted[~extracted.apply(lambda row: all(isinstance(val, str) and any(label.lower() in val.lower() for label in ['type', 'qty', 'height', 'width', 'depth', 'weight']) for val in row), axis=1)]
 
         # Validate numeric columns
         for col in ['Count', 'Height', 'Width', 'Depth']:
