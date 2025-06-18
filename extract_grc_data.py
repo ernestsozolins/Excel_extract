@@ -53,7 +53,11 @@ def extract_from_excel_or_csv(file):
         for col in ['Count', 'Height', 'Width', 'Depth']:
             if not pd.api.types.is_numeric_dtype(extracted[col]):
                 st.warning(f"Column '{col}' contains non-numeric values. Please check your mapping.")
-        return extracted.dropna()
+
+        # Drop rows where all fields are empty or any of the fields are missing
+        extracted = extracted.dropna(how='any')
+
+        return extracted
     except:
         st.error("Failed to extract data using selected columns.")
         return pd.DataFrame()
