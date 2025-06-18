@@ -64,7 +64,12 @@ def extract_from_excel_or_csv(file):
     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
     # Auto-detect header row
-    mapping = smart_column_mapping(df, row_index=0)  # Row already used as header
+    header_row_index = st.number_input("Row number to auto-detect column names from (1-based)", min_value=1, max_value=len(df), value=8) - 1
+    st.markdown(f"Using row {header_row_index + 1} for auto-detection of column headers")
+    df.columns = df.iloc[header_row_index].astype(str)
+    df = df.drop(index=header_row_index).reset_index(drop=True)
+
+    mapping = smart_column_mapping(df, row_index=0)
     st.subheader("Adjust Column Mapping (optional)")
     use_defaults = st.checkbox("Use default column mapping (ignore smart detection)", value=False)
 
@@ -121,8 +126,8 @@ if uploaded_file:
         st.success("Data extracted successfully!")
 
         st.subheader("Row Removal and Update Option")
-        delete_rows = st.multiselect("Select row indices to delete from extracted data", df.index.tolist())
-        amend_data = st.checkbox("Amend extracted data after row deletion", value=False)
+        delete_rows = st.multiselect("Select row indices to delete from extracted data", df.index.tolist(), default=[df.index[0]] if not df.empty else [])
+        amend_data = st.checkbox("Amend extracted data after row deletion", value=True)
         if amend_data and delete_rows:
             df = df.drop(delete_rows).reset_index(drop=True)
             st.info("Selected rows have been removed and data updated.")
