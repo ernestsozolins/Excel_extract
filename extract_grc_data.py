@@ -39,10 +39,11 @@ def smart_column_mapping(df):
     return mapping
 
 def extract_from_excel_or_csv(file):
+    START_ROW = 8  # Data starts at Excel row 9 (0-indexed as 8)  # Skip metadata and header rows, assuming data starts from Excel row 8 (index 7)
     try:
-        df = pd.read_excel(file)
+        df = pd.read_excel(file, skiprows=START_ROW)
     except:
-        df = pd.read_csv(file)
+        df = pd.read_csv(file, skiprows=START_ROW)
 
     # Clean whitespace from all cells
     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
