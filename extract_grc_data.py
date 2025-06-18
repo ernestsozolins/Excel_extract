@@ -66,7 +66,7 @@ def extract_from_excel_or_csv(file):
         selected_cols.append(weight_col)
         new_names.append('Weight')
 
-
+    try:
         extracted = df[selected_cols]
         extracted.columns = new_names
 
@@ -83,8 +83,8 @@ def extract_from_excel_or_csv(file):
                 st.warning(f"Column '{col}' contains non-numeric values. Please check your data.")
 
         return extracted
-    except:
-        st.error("Failed to extract data using smart column mapping.")
+    except Exception as e:
+        st.error(f"Failed to extract data using smart column mapping. Error: {e}")
         return pd.DataFrame()
 
 if uploaded_file:
