@@ -87,6 +87,20 @@ if uploaded_file:
 
     if not df.empty:
         st.success("Data extracted successfully!")
-        st.dataframe(df.head(10))
+        st.dataframe(df)
+
+        # Show total count
+        if 'Count' in df.columns:
+            total = df['Count'].sum()
+            st.markdown(f"**Total Panel Count:** {total}")
+
+        # Allow CSV download
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Extracted Data as CSV",
+            data=csv,
+            file_name='extracted_grc_panels.csv',
+            mime='text/csv'
+        )
     else:
         st.warning("No data extracted or incorrect file format.")
