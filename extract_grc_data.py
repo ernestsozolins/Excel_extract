@@ -69,12 +69,12 @@ def extract_from_excel_or_csv(file):
     header_row_index = st.number_input("Row number to auto-detect column names from (1-based)", min_value=1, max_value=len(df), value=8) - 1
     mapping = smart_column_mapping(df, row_index=header_row_index)
     st.subheader("Adjust Column Mapping (optional)")
-    type_col = st.selectbox("Column for Type", df.columns, index=df.columns.get_loc(mapping['Type']) if mapping['Type'] and mapping['Type'] in df.columns else 0)
-    count_col = st.selectbox("Column for Count", df.columns, index=df.columns.get_loc(mapping['Count']) if mapping['Count'] and mapping['Count'] in df.columns else 0)
-    height_col = st.selectbox("Column for Height", df.columns, index=df.columns.get_loc(mapping['Height']) if mapping['Height'] and mapping['Height'] in df.columns else 0)
-    width_col = st.selectbox("Column for Width", df.columns, index=df.columns.get_loc(mapping['Width']) if mapping['Width'] and mapping['Width'] in df.columns else 0)
-    depth_col = st.selectbox("Column for Depth", df.columns, index=df.columns.get_loc(mapping['Depth']) if mapping['Depth'] and mapping['Depth'] in df.columns else 0)
-    weight_col = st.selectbox("Column for Weight (optional)", ["None"] + df.columns.tolist(), index=df.columns.get_loc(mapping['Weight']) + 1 if mapping['Weight'] and mapping['Weight'] in df.columns else 0)
+    type_col = st.selectbox("Column for Type", df.columns, index=df.columns.get_loc(mapping['Type']) if mapping.get('Type') in df.columns else 0)
+    count_col = st.selectbox("Column for Count", df.columns, index=df.columns.get_loc(mapping['Count']) if mapping.get('Count') in df.columns else 0)
+    height_col = st.selectbox("Column for Height", df.columns, index=df.columns.get_loc(mapping['Height']) if mapping.get('Height') in df.columns else 0)
+    width_col = st.selectbox("Column for Width", df.columns, index=df.columns.get_loc(mapping['Width']) if mapping.get('Width') in df.columns else 0)
+    depth_col = st.selectbox("Column for Depth", df.columns, index=df.columns.get_loc(mapping['Depth']) if mapping.get('Depth') in df.columns else 0)
+    weight_col = st.selectbox("Column for Weight (optional)", ["None"] + df.columns.tolist(), index=(df.columns.get_loc(mapping['Weight']) + 1) if mapping.get('Weight') in df.columns else 0), index=df.columns.get_loc(mapping['Weight']) + 1 if mapping['Weight'] and mapping['Weight'] in df.columns else 0)
 
     selected_cols = [type_col, count_col, height_col, width_col, depth_col]
     new_names = ['Type', 'Count', 'Height', 'Width', 'Depth']
