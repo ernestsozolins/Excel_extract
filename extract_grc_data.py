@@ -40,7 +40,7 @@ def extract_from_excel_or_csv(file):
     st.write("Detected columns:", df.columns.tolist())
 
     st.subheader("Preview of Uploaded Data")
-    st.dataframe(df.head(10))
+    st.dataframe(df, height=500)
 
     st.subheader("Map Columns to Fields")
     type_col = st.selectbox("Select column for Type", df.columns)
@@ -87,6 +87,6 @@ if uploaded_file:
 
     if not df.empty:
         st.success("Data extracted successfully!")
-        st.dataframe(df)
+        st.dataframe(df.head(10))
     else:
         st.warning("No data extracted or incorrect file format.")
