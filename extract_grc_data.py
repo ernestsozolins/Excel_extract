@@ -100,3 +100,38 @@ def extract_from_excel_or_csv(file):
     except Exception as e:
         st.error(f"Failed to extract data using selected columns. Error: {e}")
         return pd.DataFrame()
+
+# ---- HANDLE UPLOADED FILE ----
+if uploaded_file:
+    file_type = uploaded_file.name.split('.')[-1].lower()
+    if file_type == 'pdf':
+        df = extract_from_pdf(uploaded_file)
+    else:
+        df = extract_from_excel_or_csv(uploaded_file)
+
+    if not df.empty:
+        st.success("Data extracted successfully!")
+
+        st.subheader("Row Removal and Update Option")
+        delete_rows = st.multiselect("Select row indices to delete from extracted data", df.index.tolist())
+        amend_data = st.checkbox("Amend extracted data after row deletion", value=False)
+        if amend_data and delete_rows:
+            df = df.drop(delete_rows).reset_index(drop=True)
+            st.info("Selected rows have been removed and data updated.")
+
+        st.subheader("Extracted GRC Panel Data")
+        st.dataframe(df)
+
+        if 'Count' in df.columns:
+            total = df['Count'].sum()
+            st.markdown(f"**Total Panel Count:** {total}")
+
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Extracted Data as CSV",
+            data=csv,
+            file_name='extracted_grc_panels.csv',
+            mime='text/csv'
+        )
+    else:
+        st.warning("No data extracted or incorrect file format.")
