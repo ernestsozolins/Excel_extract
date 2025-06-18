@@ -27,6 +27,17 @@ def extract_from_pdf(file):
                 })
     return pd.DataFrame(data)
 
+def smart_column_mapping(df):
+    mapping = {}
+    lower_cols = {col.lower(): col for col in df.columns}
+    mapping['Type'] = next((lower_cols[c] for c in lower_cols if 'type' in c or 'tips' in c), None)
+    mapping['Count'] = next((lower_cols[c] for c in lower_cols if 'count' in c or 'skaits' in c), None)
+    mapping['Height'] = next((lower_cols[c] for c in lower_cols if 'height' in c or 'augstums' in c), None)
+    mapping['Width'] = next((lower_cols[c] for c in lower_cols if 'width' in c or 'platums' in c or 'garums' in c), None)
+    mapping['Depth'] = next((lower_cols[c] for c in lower_cols if 'depth' in c or 'dziļums' in c), None)
+    mapping['Weight'] = next((lower_cols[c] for c in lower_cols if 'weight' in c or 'svars' in c), None)
+    return mapping
+
 def extract_from_excel_or_csv(file):
     try:
         df = pd.read_excel(file)
@@ -35,28 +46,26 @@ def extract_from_excel_or_csv(file):
 
     # Clean whitespace from all cells
     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-
     df.columns = [str(c).strip() for c in df.columns]
-    st.write("Detected columns:", df.columns.tolist())
 
     st.subheader("Preview of Uploaded Data")
     st.dataframe(df, height=500)
 
-    st.subheader("Map Columns to Fields")
-    type_col = st.selectbox("Select column for Type", df.columns)
-    count_col = st.selectbox("Select column for Count", df.columns)
-    height_col = st.selectbox("Select column for Height", df.columns)
-    width_col = st.selectbox("Select column for Width", df.columns)
-    depth_col = st.selectbox("Select column for Depth", df.columns)
-    weight_col = st.selectbox("Select column for Weight (optional)", ["None"] + df.columns.tolist())
+    mapping = smart_column_mapping(df)
+    st.subheader("Adjust Column Mapping (optional)")
+    type_col = st.selectbox("Column for Type", df.columns, index=df.columns.get_loc(mapping['Type']) if mapping['Type'] in df.columns else 0)
+    count_col = st.selectbox("Column for Count", df.columns, index=df.columns.get_loc(mapping['Count']) if mapping['Count'] in df.columns else 0)
+    height_col = st.selectbox("Column for Height", df.columns, index=df.columns.get_loc(mapping['Height']) if mapping['Height'] in df.columns else 0)
+    width_col = st.selectbox("Column for Width", df.columns, index=df.columns.get_loc(mapping['Width']) if mapping['Width'] in df.columns else 0)
+    depth_col = st.selectbox("Column for Depth", df.columns, index=df.columns.get_loc(mapping['Depth']) if mapping['Depth'] in df.columns else 0)
+    weight_col = st.selectbox("Column for Weight (optional)", ["None"] + df.columns.tolist(), index=df.columns.get_loc(mapping['Weight']) + 1 if mapping['Weight'] in df.columns else 0)
 
-    try:
-        selected_cols = [type_col, count_col, height_col, width_col, depth_col]
-        new_names = ['Type', 'Count', 'Height', 'Width', 'Depth']
+    selected_cols = [type_col, count_col, height_col, width_col, depth_col]
+    new_names = ['Type', 'Count', 'Height', 'Width', 'Depth']
+    if weight_col != "None":
+        selected_cols.append(weight_col)
+        new_names.append('Weight')
 
-        if weight_col != "None":
-            selected_cols.append(weight_col)
-            new_names.append('Weight')
 
         extracted = df[selected_cols]
         extracted.columns = new_names
@@ -71,11 +80,11 @@ def extract_from_excel_or_csv(file):
         # Validate numeric columns
         for col in ['Count', 'Height', 'Width', 'Depth']:
             if not pd.api.types.is_numeric_dtype(extracted[col]):
-                st.warning(f"Column '{col}' contains non-numeric values. Please check your mapping.")
+                st.warning(f"Column '{col}' contains non-numeric values. Please check your data.")
 
         return extracted
     except:
-        st.error("Failed to extract data using selected columns.")
+        st.error("Failed to extract data using smart column mapping.")
         return pd.DataFrame()
 
 if uploaded_file:
@@ -87,6 +96,9 @@ if uploaded_file:
 
     if not df.empty:
         st.success("Data extracted successfully!")
+
+        # Show full extracted data
+        st.subheader("Extracted GRC Panel Data")
         st.dataframe(df)
 
         # Show total count
